@@ -1,0 +1,24 @@
+# Python
+agent/venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Android / Gradle
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/local.properties
+android/*.iml
+.idea/
+*.swp
+*.bak
+
+# OS
+.DS_Store
+Thumbs.db
+
+app-debug.apk

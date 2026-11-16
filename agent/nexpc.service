@@ -1,0 +1,14 @@
+[Unit]
+Description=NexPC Linux Agent - Remote Control and Monitoring Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart="/home/wdwi/Documents/kontrol pc/agent/run.sh"
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=default.target
