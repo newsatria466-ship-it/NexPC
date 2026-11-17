@@ -22,3 +22,4 @@ android/*.iml
 Thumbs.db
 
 app-debug.apk
+agent/venv_win/

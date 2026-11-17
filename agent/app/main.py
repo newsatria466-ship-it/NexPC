@@ -75,7 +75,7 @@ async def verify_auth(authorized: bool = Depends(verify_token)):
 @app.get("/api/processes")
 async def list_processes(
     limit: int = Query(60, ge=1, le=200),
-    sort_by: str = Query("cpu", enum=["cpu", "memory", "name"]),
+    sort_by: str = Query("cpu"),
     search: Optional[str] = Query(None),
     authorized: bool = Depends(verify_token)
 ):
