@@ -37,6 +37,9 @@ import com.nexpc.app.ui.components.ActionBubble
 import com.nexpc.app.ui.theme.*
 import com.nexpc.app.viewmodel.MainViewModel
 import com.nexpc.app.viewmodel.TransferStatus
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class SelectedFileInfo(
     val uri: Uri,
@@ -81,6 +84,23 @@ fun FilesScreen(viewModel: MainViewModel) {
     var moveDestPath by remember { mutableStateOf("") }
 
     var targetUploadDir by remember { mutableStateOf<String?>(null) }
+
+    var searchQuery by remember { mutableStateOf("") }
+    var sortOption by remember { mutableStateOf("date") } // "date", "name", "size"
+
+    val displayItems = remember(browseResponse.items, searchQuery, sortOption) {
+        val filtered = if (searchQuery.isNotBlank()) {
+            browseResponse.items.filter { it.name.contains(searchQuery.trim(), ignoreCase = true) }
+        } else {
+            browseResponse.items
+        }
+
+        when (sortOption) {
+            "name" -> filtered.sortedWith(compareBy({ !it.isDir }, { it.name.lowercase() }))
+            "size" -> filtered.sortedWith(compareBy({ !it.isDir }, { -it.sizeBytes }))
+            else -> filtered.sortedWith(compareBy({ !it.isDir }, { -it.modified }))
+        }
+    }
 
     val multiFilePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
@@ -393,18 +413,101 @@ fun FilesScreen(viewModel: MainViewModel) {
                         }
                     }
 
+                    // Search Bar & Sorting Chips
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Cari file di folder ini...", fontSize = 12.sp, color = TextMuted) },
+                        leadingIcon = {
+                            Icon(Icons.Default.Search, contentDescription = "Search", tint = TextSecondary, modifier = Modifier.size(18.dp))
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }, modifier = Modifier.size(24.dp)) {
+                                    Icon(Icons.Default.Close, contentDescription = "Clear", tint = TextMuted, modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = SurfaceCard,
+                            unfocusedContainerColor = SurfaceCard,
+                            focusedBorderColor = BlueAccent,
+                            unfocusedBorderColor = CardBorder
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Urutkan:", fontSize = 11.sp, color = TextMuted, fontWeight = FontWeight.Medium)
+
+                        FilterChip(
+                            selected = sortOption == "date",
+                            onClick = { sortOption = "date" },
+                            label = { Text("Terbaru", fontSize = 11.sp) },
+                            leadingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(12.dp)) },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = BlueSubtle,
+                                selectedLabelColor = BlueAccent,
+                                containerColor = SurfaceCard,
+                                labelColor = TextSecondary
+                            ),
+                            border = BorderStroke(0.5.dp, if (sortOption == "date") BlueAccent else CardBorder)
+                        )
+
+                        FilterChip(
+                            selected = sortOption == "name",
+                            onClick = { sortOption = "name" },
+                            label = { Text("Nama A-Z", fontSize = 11.sp) },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = BlueSubtle,
+                                selectedLabelColor = BlueAccent,
+                                containerColor = SurfaceCard,
+                                labelColor = TextSecondary
+                            ),
+                            border = BorderStroke(0.5.dp, if (sortOption == "name") BlueAccent else CardBorder)
+                        )
+
+                        FilterChip(
+                            selected = sortOption == "size",
+                            onClick = { sortOption = "size" },
+                            label = { Text("Ukuran", fontSize = 11.sp) },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = BlueSubtle,
+                                selectedLabelColor = BlueAccent,
+                                containerColor = SurfaceCard,
+                                labelColor = TextSecondary
+                            ),
+                            border = BorderStroke(0.5.dp, if (sortOption == "size") BlueAccent else CardBorder)
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(10.dp))
 
                     if (isLoading) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(color = BlueAccent, modifier = Modifier.size(32.dp))
                         }
-                    } else if (browseResponse.items.isEmpty()) {
+                    } else if (displayItems.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Default.FolderOpen, contentDescription = null, tint = TextMuted, modifier = Modifier.size(40.dp))
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text("Folder is empty.", fontSize = 13.sp, color = TextMuted)
+                                Text(
+                                    text = if (searchQuery.isNotEmpty()) "Tidak ada file yang cocok dengan \"$searchQuery\"" else "Folder is empty.",
+                                    fontSize = 13.sp,
+                                    color = TextMuted
+                                )
                             }
                         }
                     } else {
@@ -413,7 +516,7 @@ fun FilesScreen(viewModel: MainViewModel) {
                             contentPadding = PaddingValues(bottom = 90.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            items(browseResponse.items) { item ->
+                            items(displayItems) { item ->
                                 var menuExpanded by remember { mutableStateOf(false) }
 
                                 Row(
@@ -455,13 +558,20 @@ fun FilesScreen(viewModel: MainViewModel) {
                                                 fontWeight = FontWeight.Medium,
                                                 color = TextPrimary
                                             )
-                                            if (!item.isDir) {
-                                                Text(
-                                                    text = item.sizeFormatted,
-                                                    fontSize = 11.sp,
-                                                    color = TextMuted
-                                                )
+                                            val timeFmt = remember { SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()) }
+                                            val modTimeStr = remember(item.modified) {
+                                                if (item.modified > 0) timeFmt.format(Date(item.modified * 1000L)) else ""
                                             }
+                                            val subtitleText = if (item.isDir) {
+                                                if (modTimeStr.isNotEmpty()) modTimeStr else "Folder"
+                                            } else {
+                                                if (modTimeStr.isNotEmpty()) "${item.sizeFormatted} • $modTimeStr" else item.sizeFormatted
+                                            }
+                                            Text(
+                                                text = subtitleText,
+                                                fontSize = 11.sp,
+                                                color = TextMuted
+                                            )
                                         }
                                     }
 

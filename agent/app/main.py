@@ -280,9 +280,9 @@ async def get_app_version():
     apk_exists = apk_path.exists()
     apk_size = apk_path.stat().st_size if apk_exists else 0
     return {
-        "version_code": 19,
-        "version_name": "2.6.0",
-        "changelog": "Dual-OS & Neo-Brutalism Update 🚀 Auto-detect Windows vs Arch Linux! Tema baru Neo-Brutalism khusus Windows (High-Contrast, Tactile Dock & Hard Shadows) dengan fitur File Sharing, 2-Way Clipboard Sync, Laptop Battery & OTA Update.",
+        "version_code": 20,
+        "version_name": "2.7.0",
+        "changelog": "File Manager Upgrade 📁 Fitur pencarian file langsung (Live Search) & pengurutan otomatis: file terbaru selalu berada di paling atas!",
         "apk_available": apk_exists,
         "apk_size": apk_size
     }

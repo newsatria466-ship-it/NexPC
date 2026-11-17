@@ -132,12 +132,13 @@ class FileManager:
 
         items = []
         try:
-            for entry in sorted(os.scandir(target_dir), key=lambda e: (not e.is_dir(), e.name.lower())):
+            raw_entries = []
+            for entry in os.scandir(target_dir):
                 try:
                     stat = entry.stat()
                     is_dir = entry.is_dir()
                     size = 0 if is_dir else stat.st_size
-                    items.append({
+                    raw_entries.append({
                         "name": entry.name,
                         "path": entry.path,
                         "is_dir": is_dir,
@@ -147,6 +148,9 @@ class FileManager:
                     })
                 except (PermissionError, OSError):
                     continue
+
+            # Sort: Folders first, then items by modified time descending (newest files on top!)
+            items = sorted(raw_entries, key=lambda x: (not x["is_dir"], -x["modified"]))
         except Exception as e:
             print(f"[FileManager] Error reading directory: {e}")
 
